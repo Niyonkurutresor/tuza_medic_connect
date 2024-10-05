@@ -1,0 +1,37 @@
+{
+    "name": "quarksgroup/paypack-php",
+    "description": "Paypack SDK for PHP Integration",
+    "keywords": [
+        "paypack",
+        "paypack rwanda",
+        "rwanda payment",
+        "payment processing",
+        "paypack php",
+        "paypack SDK"
+    ],
+    "homepage": "https://paypack.rw/",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Paypack\\": "src/"
+        },
+        "classmap": [
+            "src/Paypack.php"
+        ]
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Paypack\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Quarks Group",
+            "email": "info@quarksgroup.rw"
+        }
+    ],
+    "require": {
+        "php": ">=7.4",
+        "guzzlehttp/guzzle": "^7.4"
+    }
+}

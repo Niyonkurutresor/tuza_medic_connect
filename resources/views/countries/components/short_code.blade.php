@@ -1,0 +1,1 @@
+{{ $row->short_code }}

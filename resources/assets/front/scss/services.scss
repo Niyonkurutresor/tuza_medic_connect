@@ -1,0 +1,25 @@
+.services-page {
+    .services-section {
+        padding-bottom: 60px;
+    
+        @media (max-width: 991px) {
+            padding-bottom: 24px;
+        }
+    
+        .services-block {
+            margin-bottom: 40px;
+    
+            @media (max-width: 991px) {
+                margin-bottom: 24px;
+            }
+    
+            .services-icon-box {
+                width: 90px;
+                height: 90px;
+                background: #f3f5f8;
+                border-radius: 10px;
+                margin-bottom: 30px;
+            }
+        }
+    }
+}

@@ -1,0 +1,1 @@
+{{ $row->display_name }}

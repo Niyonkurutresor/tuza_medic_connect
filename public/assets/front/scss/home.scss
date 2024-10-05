@@ -1,0 +1,168 @@
+.home-page {
+    .how-work-section {
+        background-color: #F3F5F8;
+    
+        .card {
+            .card-number {
+                background: linear-gradient(#FE8065, #F74D6C);
+                background-size: cover;
+                -webkit-background-clip: text;
+                -webkit-text-stroke: 6px transparent;
+                font-size: 100px;
+                color: #fff;
+                text-transform: capitalize;
+                font-weight: 700;
+                line-height: 85px;
+            }
+        }
+    }
+    
+    .appointmnet-section {
+        &__inner-block {
+            padding: 25px;
+
+            @media (min-width: 768px) {
+                padding: 40px;
+            }
+     
+            @media (min-width: 992px) {
+                padding: 0 60px 0 0;
+            }
+        }
+    
+        h2 {
+            font-size: 30px;
+        }
+    
+        .contact-form {
+            @media (min-width: 992px) {
+                padding-top: 40px;
+                padding-bottom: 60px;
+            }
+    
+            &__input-block {
+                margin-bottom: 20px;
+            }
+        }
+    }
+    
+    .services-section {
+        .services-block {
+            padding: 40px;
+
+            @media (max-width: 575px) {
+                padding: 25px;
+            }
+    
+            .services-innner-block {
+                padding: 0 25px;
+
+                @media (min-width: 768px) {
+                    border-right: 1px solid #BABDC0;
+                }
+
+                @media (max-width: 767px) {
+                    padding: 0 12px;
+                }
+    
+                &:last-child {
+                    border-right: 0;
+                }
+    
+                .icon-box {
+                    width: 90px;
+                    height: 90px;
+                    background: #F3F5F8;
+                    border-radius: 10px;
+                    margin-bottom: 30px;
+                }  
+            }  
+        }
+    
+        .after-rectangle-shape::after {
+            height: 240px;
+
+            @media (max-width: 767px) {
+                content: none;
+            }
+        }
+
+        .services-carousel {
+            width: calc(100% - 60px);
+            margin: auto;
+        }
+    
+        .right-shape {
+            @media (min-width: 768px) {
+                padding-left: 140px;  
+            }
+        }
+    
+        .slick-list {
+            background-color: #ffffff;
+            -webkit-box-shadow: 0px 5px 15px #d7dee8;
+            box-shadow: 0px 5px 15px #d7dee8;
+            border-radius: 20px;
+        }
+    
+        .slick-prev,
+        .slick-next {
+            background: linear-gradient(117.85deg, #FE8065 0%, #F74D6C 100%);
+            border-color: transparent;
+            color: #ffffff;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            box-shadow: 0px 5px 15px #D7DEE8;
+            z-index: 1;
+
+            @media (max-width: 575px) {
+                width: 40px;
+                height: 40px;
+            }
+    
+            &::before {
+                font-family: "Font Awesome 6 Free";
+                font-weight: 900;
+                -webkit-font-smoothing: antialiased;
+                display: var(--fa-display, inline-block);
+                color: #ffffff;
+                opacity: 1;
+                font-size: 30px;
+
+                @media (max-width: 575px) {
+                    font-size: 20px;
+                }
+            }
+        }
+    
+        .slick-prev {
+            left: -30px;
+
+            @media (max-width: 575px) {
+                left: -22px;
+            }
+    
+            &::before {
+                content: "\f104";
+            }
+        }
+    
+        .slick-next {
+            right: -30px;
+
+            @media (max-width: 575px) {
+                right: -22px;
+            }
+    
+            &::before {
+                content: "\f105";
+            }
+        }
+    
+    }
+    
+    .form-control-transparent {
+        background-color: transparent !important;
+    }
+}

@@ -1,0 +1,554 @@
+.menu-links .nav>li:hover>a,
+.menu-links .nav>li.active>a {
+    @media only screen and (max-width: 991px) {
+        color: #f17732 !important;
+    }
+}
+
+footer .ft-contact .contact-bx .contact-number .number {
+    white-space: nowrap;
+}
+
+.header .secondary-menu {
+    @media only screen and (max-width: 575px) {
+        height: unset;
+    }
+
+    @media only screen and (max-width: 991px) {
+        margin-top: 10px !important;
+    }
+}
+
+.menu-links .nav>li>a {
+    @media (min-width: 1080px) and (max-width: 1340px) {
+        padding: 45px 12px !important;
+        font-size: 15px;
+    }
+
+    @media (min-width: 992px) and (max-width: 1140px) {
+        padding: 45px 7px !important;
+        font-size: 13px;
+    }
+}
+
+.dashboard-button {
+    @media (max-width: 1179px) {
+        padding: 15px !important;
+    }
+
+    @media (max-width: 1140px) {
+        padding: 15px 8px !important;
+    }
+}
+
+.appointment-header-btn {
+    @media (max-width: 1179px) {
+        padding: 15px 30px 15px 15px !important;
+    }
+
+    @media (max-width: 1140px) {
+        padding: 15px 30px 15px 6px !important;
+    }
+}
+
+.menu-links .nav>li:hover a i {
+    transform: unset;
+}
+
+.menu-links {
+    .nav {
+        &>li {
+            .mega-menu {
+                li {
+                    a {
+                        @media only screen and (max-width: 991px) {
+                            width: 100%;
+                        }
+                    }
+                }
+            }
+        }
+
+        li {
+            .sub-menu {
+                li {
+                    a {
+                        @media only screen and (max-width: 991px) {
+                            width: 100%;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+.mobile-logo {
+    width: 60px !important;
+    height: auto !important;
+}
+
+.menu-logo img {
+    @media (max-width: 1230px) and (min-width: 992px) {
+        width: 60px !important;
+    }
+
+    @media (max-width: 575px) {
+        width: 60px !important;
+    }
+}
+
+.appointment-container {
+    @media (max-width: 375px) {
+        display: flex !important;
+        flex-direction: column;
+    }
+}
+
+.appointment-available,
+.appointment-booked {
+    @media (max-width: 375px) {
+        width: 100%;
+    }
+}
+
+.appointment-available div {
+    @media (max-width: 375px) {
+        margin-left: 0 !important;
+    }
+}
+
+.medical-heading {
+    @media (max-width: 360px) {
+        font-size: 32px !important;
+    }
+}
+
+.breadcrumb-row {
+    @media (max-width: 340px) {
+        padding: 10px 14px !important;
+    }
+}
+
+.blog-area .pt-img2 {
+    @media (max-width: 1199px) {
+        bottom: 0 !important;
+    }
+
+    @media (max-width: 991px) {
+        bottom: -20px !important;
+    }
+}
+
+.feature-bx2 {
+    .feature-box-xl {
+        img {
+            width: 60px;
+            height: 60px;
+        }
+    }
+}
+
+.phone-number {
+    .hide {
+        display: none;
+    }
+
+    #error-msg {
+        color: #f72b50;
+    }
+
+    #valid-msg {
+        color: #209f84;
+    }
+}
+
+.iti {
+    width: 100%;
+}
+
+.main-banner {
+    @media (max-width: 575px) {
+        width: 100%;
+    }
+}
+
+.pt-img1.animate-wave {
+    @media (max-width: 991px) {
+        top: 70px;
+    }
+}
+
+.appointment-calendar {
+    color: #444 !important;
+}
+
+.swiper-pagination {
+    .swiper-pagination-bullet {
+        display: none !important;
+    }
+}
+
+.appointment-thumb {
+    @media (max-width: 380px) {
+        width: 100%;
+    }
+}
+
+.rs-nav .menu-links {
+    @media (max-width: 991px) {
+        background-color: #333f6c;
+    }
+}
+
+.menu-links .nav {
+    @media (max-width: 340px) {
+        width: 100%;
+        min-width: unset;
+    }
+}
+
+.appointment-button .btn {
+    @media (max-width: 290px) {
+        font-size: 13px;
+    }
+}
+
+.swiper-slide {
+    height: auto;
+
+    .feature-container {
+        height: 93%;
+    }
+}
+
+.front-slot-data {
+    .time-slot {
+        &.bookedSlot {
+            background: #f62947 !important;
+
+            &:hover {
+                background: #ec0927 !important;
+            }
+        }
+
+        &.activeSlot {
+            background: #5d5dc2 !important;
+        }
+
+        &:hover {
+            background: #5d5dc2 !important;
+        }
+    }
+
+}
+
+.contact-bx {
+    @media (max-width: 300px) {
+        flex-direction: column;
+    }
+
+    .contact-number {
+        @media (max-width: 300px) {
+            text-align: center;
+        }
+
+        span {
+            @media (max-width: 300px) {
+                margin-top: 10px;
+            }
+        }
+    }
+}
+
+.team-member {
+
+    .doctor-appointment-btn,
+    .about-appointment-btn {
+        @media (max-width: 365px) {
+            margin-left: -25px;
+            margin-right: -25px;
+        }
+    }
+
+    .team-media img {
+        width: 170px;
+        height: 170px;
+        object-fit: cover;
+    }
+}
+
+//datepicker
+.datepicker table tr td.active.active {
+    background-image: linear-gradient(to bottom, #565acf, #565acf);
+
+    &:hover {
+        background-image: linear-gradient(to bottom, #494db0, #494db0);
+    }
+}
+
+.booking-button {
+    padding: 20px 30px;
+
+    @media (max-width: 280px) {
+        padding: 20px 10px;
+    }
+}
+
+.booking-home-button {
+    padding: 20px 20px;
+}
+
+.btn-icon-bx {
+    min-width: 40px;
+    width: auto;
+}
+
+.team-member {
+    .team-media {
+        &::before {
+            @media (max-width: 575px) and (min-width: 430px) {
+                background-size: 57%;
+            }
+        }
+
+        &::after {
+            @media (max-width: 575px) and (min-width: 430px) {
+                background-size: 80%;
+            }
+        }
+    }
+}
+
+.table-condensed {
+    tbody tr {
+        .today {
+            background-color: #e8e8e8 !important;
+            background-image: linear-gradient(to bottom, #e8e8e8, #e8e8e8) !important;
+
+            &:hover {
+                background-color: #dedede !important;
+                background-image: linear-gradient(to bottom, #dedede, #dedede) !important;
+            }
+        }
+
+        .today.active {
+            background-image: linear-gradient(to bottom, #565acf, #565acf) !important;
+
+            &:hover {
+                background-image: linear-gradient(to bottom, #494db0, #494db0) !important;
+            }
+        }
+    }
+}
+
+.w-20px {
+    width: 20px;
+}
+
+.datepicker-days {
+    .table-condensed {
+        td {
+            text-align: center;
+        }
+    }
+}
+
+.datepicker table tr td {
+    width: 40px !important;
+    height: 40px !important;
+}
+
+.datepicker table tr th {
+    height: 32px
+}
+
+.testimonial-image {
+    max-height: 50px !important;
+    max-width: 120px !important;
+}
+
+.image-circle>img {
+    border-radius: 50%;
+}
+
+.front-app-logo {
+    max-height: 50px;
+    max-width: 120px;
+}
+
+.g-recaptcha {
+    @media (max-width: 375px) {
+        transform: scale(0.85) !important;
+        -webkit-transform: scale(0.80) !important;
+        transform-origin: 0 0 !important;
+        -webkit-transform-origin: 0 0 !important;
+    }
+
+}
+
+.image.image-mini img {
+    width: 50px !important;
+    height: 50px !important;
+}
+
+.image>img {
+    width: 100% !important;
+    flex-shrink: 0 !important;
+    display: inline-block !important;
+    -o-object-fit: cover !important;
+    object-fit: cover !important;
+}
+
+
+
+
+
+
+
+.qrcodeimg {
+    width: 110px !important;
+    height: 110px !important;
+    object-fit: cover;
+}
+.qrcode-option-ul{
+    margin-top: 20px;
+    margin-bottom: 20px;
+}
+.qrcode-option-li{
+    margin: 0px 20px 0px 0px !important;
+    @media (max-width: 375px) {
+        margin: 0px 5px 0px 0px !important;
+    }
+}
+.qrcode-option {
+    color: #747B81 !important;
+    font-weight: 500;
+    border: 2px solid black !important;
+    padding: 13px 25px !important;
+    border-radius: 50px !important;
+
+    border: 1px solid transparent !important;
+    background: linear-gradient(#ffffff 0 0) padding-box, linear-gradient(to right, #fe8065, #f74d6c) border-box !important;
+    color: #f74d6c !important;
+    transition: all 0.3s ease-in-out !important;
+
+    @media (max-width: 320px) {
+        padding: 10px 15px !important;
+    }
+}
+
+.qrcode-option.active {
+    color: #FE8065 !important;
+    font-weight: 500;
+    background: linear-gradient(117.85deg, #fe8065 0%, #f74d6c 100%) !important;
+    border-color: transparent;
+    color: #ffffff !important;
+    transition: all 0.3s ease-in-out !important;
+}
+.qr-patient-appointment-name{
+    margin-top: 6px;
+    @media (max-width: 425px) {
+        margin-top: 0px;
+    }
+}
+.qr-card {
+    box-shadow: 0px 5px 15px #d7dee8 !important;
+    border-radius: 0px 0px 50px 0px !important;
+}
+
+.appintment-time {
+    width: 160px !important;
+    padding: 10px 15px;
+
+    @media (max-width: 375px) {
+        width: 140px !important;
+        padding: 5px 7px;
+    }
+}
+
+tbody,
+td,
+tfoot,
+th,
+thead,
+tr {
+    border-color: inherit;
+    border-style: none;
+    border-width: 0;
+}
+.patient-email:hover,
+.patient-contact:hover {
+    color: #F74D6B !important;
+}
+
+.patient-email,
+.patient-contact {
+    color: #6C757D !important;
+}
+
+.nav-tabs {
+    border-bottom: none;
+}
+
+.header-qr-appontment>th {
+    font-size: 17px;
+
+    @media (max-width: 375px) {
+        font-size: 15px;
+    }
+}
+
+.table>:not(:first-child) {
+    border-top: 0px solid #c8c8c8 !important;
+}
+
+.badge {
+    font-weight: 400;
+}
+
+.book-badge {
+    background-color: #6572ffd9 !important;
+    width: 140px;
+    height: 28px;
+}
+
+.book-checkin {
+    background-color: #09c074d4 !important;
+    width: 140px;
+    height: 28px;
+}
+
+.book-checkout {
+    background-color: #ffb921d0 !important;
+    width: 140px;
+    height: 28px;
+}
+
+.book-cancel {
+    background-color: #f62948df !important;
+    width: 140px;
+    height: 28px;
+}
+
+.data-qr-code {
+    vertical-align: middle;
+}
+
+.qr-appointment-name {
+    font-size: 15px;
+}
+.qr-code-name
+{
+    font-size: 15px;
+    @media (max-width: 375px) {
+        width: 250px;
+    }
+}
+
+.qr-patient-detal-show{
+    color: red;
+}
+.qr-doctor-img{
+    object-fit: cover;
+}

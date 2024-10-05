@@ -1,0 +1,1 @@
+{{ $row->role_name }}

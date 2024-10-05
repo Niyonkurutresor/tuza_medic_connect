@@ -1,0 +1,43 @@
+.book-appointment-page {
+    .book-appointment-form {
+        padding: 25px;
+            
+        @media (min-width: 992px) {
+            padding: 60px;
+        }
+
+        @media (min-width: 768px) {
+            padding: 40px;
+        }
+
+        .slots-box {
+            padding: 15px 16px;
+            border: 1px solid #babdc0;
+            border-radius: 10px;
+            margin-bottom: 60px;
+            max-height: 350px;
+            overflow-y: auto;
+
+            @media (max-width: 991px) {
+                margin-bottom: 40px;
+            }
+
+            @media (max-width: 767px) {
+                margin-bottom: 25px;
+                padding-left: 10px;
+                padding-right: 10px;
+            }
+
+            .slots-item {
+                margin: 7px;
+                min-width: calc(20% - 15px);
+
+                @media (max-width: 991px) {
+                    margin: 5px;
+                    min-width: calc(20% - 10px);
+                    font-size: 14px;
+                }
+            }
+        }
+    }
+}

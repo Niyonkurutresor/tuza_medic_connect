@@ -1,0 +1,30 @@
+.our-faqs-page {
+    .our-faqs-section {
+        padding-top: 80px;
+        padding-bottom: 100px;
+      
+        @media (min-width: 992px) {
+            padding-bottom: 80px;
+        }
+    
+        @media (max-width: 991px) {
+            padding-top: 100px;
+            margin-bottom: -30px;
+        }
+    }
+
+    .accordion-button {
+        &:focus{
+            z-index: 3;
+            border-color: #892b1d !important;
+            outline: 0;
+            box-shadow: 0 0 0 0.25rem rgb(251 213 209);
+        }
+    }
+    
+    .accordion-button:not(.collapsed) {
+        color: #fd7866 !important;
+        background-color: #f9eeed !important;
+        box-shadow: inset 0 -1px 0 rgb(0 0 0 / 13%);
+    }
+}
