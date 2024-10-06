@@ -4,12 +4,15 @@ services:
     env: php
     plan: free
     buildCommand: |
-      composer install
-      npm ci
-      npm run prod
+      nvm use 16      
+      composer install --no-dev --optimize-autoloader      
+      npm ci      
+      npm run prod      
+      php artisan config:cache
+      php artisan route:cache
     startCommand: |
       php artisan migrate --force
-      php artisan db:seed --force
+      php artisan db:seed --force      
       php artisan serve --host 0.0.0.0 --port $PORT
     envVars:
       - key: NODE_VERSION
