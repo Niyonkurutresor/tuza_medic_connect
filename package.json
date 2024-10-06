@@ -1,7 +1,6 @@
 {
   "private": true,
   "scripts": {
-    "postinstall": "npm run production",
     "dev": "npm run development",
     "development": "mix",
     "watch": "mix watch",
