@@ -5,7 +5,7 @@ services:
     plan: free
     buildCommand: |
       composer install
-      npm install
+      npm ci
       npm run prod
     startCommand: |
       php artisan migrate --force
