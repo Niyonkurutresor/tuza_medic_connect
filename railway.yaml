@@ -6,29 +6,28 @@ services:
     buildCommand: |
       # Clear npm cache to avoid dependency issues
       npm cache clean --force
-
-      # Use Node.js version 16.20.2 specifically
-      nvm install 16.20.2
-      nvm use 16.20.2
       
       # Install composer dependencies
       composer install --no-dev --optimize-autoloader
 
-      # Set the NODE_OPTIONS for OpenSSL compatibility
-      export NODE_OPTIONS=--openssl-legacy-provider
-      
-      # Install Node.js dependencies and build assets
+      # Install Node.js dependencies
       npm ci
+      
+      # Set the OpenSSL compatibility option and build assets
+      export NODE_OPTIONS=--openssl-legacy-provider
       npm run production
     startCommand: |
-      # Run migrations and seeds
+      # Run migrations and cache settings during startup, not during build
       php artisan migrate --force
       php artisan db:seed --force
-      
+      php artisan config:cache
+      php artisan route:cache
+      php artisan view:cache
+
       # Start Laravel server
       php artisan serve --host 0.0.0.0 --port $PORT
-  envVars:
-    - key: NODE_VERSION
-      value: 16.20.2
-    - key: NODE_OPTIONS
-      value: "--openssl-legacy-provider"
+    envVars:
+      - key: NODE_VERSION
+        value: 16.20.2
+      - key: NODE_OPTIONS
+        value: "--openssl-legacy-provider"
