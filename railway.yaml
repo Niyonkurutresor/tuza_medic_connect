@@ -4,27 +4,24 @@ services:
     env: php
     plan: free
     buildCommand: |
-      # Clear npm cache to avoid dependency issues
-      npm cache clean --force
-      
-      # Install composer dependencies
+      # Install composer dependencies without dev dependencies
       composer install --no-dev --optimize-autoloader
-
-      # Install Node.js dependencies
-      npm ci
       
-      # Set the OpenSSL compatibility option and build assets
+      # Install Node.js dependencies and build production assets
+      npm ci
       export NODE_OPTIONS=--openssl-legacy-provider
-      npm run production
+      npm run prod
     startCommand: |
-      # Run migrations and cache settings during startup, not during build
+      # Run migrations and seeders on start
       php artisan migrate --force
       php artisan db:seed --force
+
+      # Cache Laravel configurations
       php artisan config:cache
       php artisan route:cache
       php artisan view:cache
 
-      # Start Laravel server
+      # Start the Laravel server
       php artisan serve --host 0.0.0.0 --port $PORT
     envVars:
       - key: NODE_VERSION
