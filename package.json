@@ -1,35 +1,45 @@
-services:
-  - type: web
-    name: my-laravel-app
-    env: php
-    plan: free
-    buildCommand: |
-      # Install composer dependencies
-      composer install --no-dev --optimize-autoloader
-      
-      # Install Node.js dependencies
-      npm ci
-      
-      # Set executable permissions for Webpack and Laravel Mix
-      chmod +x node_modules/.bin/webpack
-      chmod +x node_modules/.bin/mix
-
-      # Build production assets
-      export NODE_OPTIONS=--openssl-legacy-provider
-      npm run prod
-  startCommand: |
-    # Run database migrations and cache settings during startup
-    php artisan migrate --force
-    php artisan db:seed --force
-    php artisan config:cache
-    php artisan route:cache
-    php artisan view:cache
-    
-    # Start Laravel server
-    php artisan serve --host 0.0.0.0 --port $PORT
-  envVars:
-    - key: NODE_VERSION
-      value: 18.x
-    - key: NODE_OPTIONS
-      value: "--openssl-legacy-provider"
-
+{
+  "name": "my-laravel-app",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "postinstall": "npm run production",
+    "dev": "npm run development",
+    "development": "mix",
+    "watch": "mix watch",
+    "watch-poll": "mix watch -- --watch-options-poll=1000",
+    "hot": "mix watch --hot",
+    "prod": "npm run production",
+    "production": "mix --production"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.1.0",
+    "laravel-mix": "^6.0.6",
+    "lodash": "^4.17.19",
+    "postcss": "^8.2.1",
+    "postcss-import": "^12.0.1",
+    "handlebars": "^4.7.7",
+    "jsrender": "^1.0.5",
+    "izitoast": "^1.4.0",
+    "resolve-url-loader": "^4.0.0",
+    "sass": "^1.36.0",
+    "sass-loader": "^12.1.0",
+    "fullcalendar": "^5.8.0",
+    "flatpickr": "^4.6.9",
+    "bootstrap-daterangepicker": "^3.1.0"
+  },
+  "dependencies": {
+    "@hotwired/turbo": "^7.1.0",
+    "apexcharts": "^3.29.0",
+    "bootstrap-datepicker": "^1.9.0",
+    "datatables": "^1.10.18",
+    "intl-tel-input": "^17.0.13",
+    "jquery": "^3.2.1",
+    "quill": "^1.3.7",
+    "laravel-mix": "^6.0.0",
+    "webpack": "^5.0.0"
+  },
+  "engines": {
+    "node": "18.x"
+  }
+}
