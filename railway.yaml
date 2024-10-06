@@ -4,18 +4,31 @@ services:
     env: php
     plan: free
     buildCommand: |
-      nvm use 16      
-      composer install --no-dev --optimize-autoloader      
-      npm ci      
-      npm run prod      
-      php artisan config:cache
-      php artisan route:cache
+      # Clear npm cache to avoid dependency issues
+      npm cache clean --force
+
+      # Use Node.js version 16.20.2 specifically
+      nvm install 16.20.2
+      nvm use 16.20.2
+      
+      # Install composer dependencies
+      composer install --no-dev --optimize-autoloader
+
+      # Set the NODE_OPTIONS for OpenSSL compatibility
+      export NODE_OPTIONS=--openssl-legacy-provider
+      
+      # Install Node.js dependencies and build assets
+      npm ci
+      npm run production
     startCommand: |
+      # Run migrations and seeds
       php artisan migrate --force
-      php artisan db:seed --force      
+      php artisan db:seed --force
+      
+      # Start Laravel server
       php artisan serve --host 0.0.0.0 --port $PORT
-    envVars:
-      - key: NODE_VERSION
-        value: 16
-      - key: NODE_OPTIONS
-        value: "--openssl-legacy-provider"
+  envVars:
+    - key: NODE_VERSION
+      value: 16.20.2
+    - key: NODE_OPTIONS
+      value: "--openssl-legacy-provider"
