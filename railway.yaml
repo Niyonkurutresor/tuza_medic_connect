@@ -4,27 +4,23 @@ services:
     env: php
     plan: free
     buildCommand: |
-      # Install composer dependencies without dev dependencies
+      # Install dependencies
       composer install --no-dev --optimize-autoloader
-      
-      # Install Node.js dependencies and build production assets
       npm ci
       export NODE_OPTIONS=--openssl-legacy-provider
       npm run prod
-    startCommand: |
-      # Run migrations and seeders on start
-      php artisan migrate --force
-      php artisan db:seed --force
-
-      # Cache Laravel configurations
-      php artisan config:cache
-      php artisan route:cache
-      php artisan view:cache
-
-      # Start the Laravel server
-      php artisan serve --host 0.0.0.0 --port $PORT
-    envVars:
-      - key: NODE_VERSION
-        value: 16.20.2
-      - key: NODE_OPTIONS
-        value: "--openssl-legacy-provider"
+  startCommand: |
+    # Perform database migrations and cache settings during startup
+    php artisan migrate --force
+    php artisan db:seed --force
+    php artisan config:cache
+    php artisan route:cache
+    php artisan view:cache
+    
+    # Start the Laravel server
+    php artisan serve --host 0.0.0.0 --port $PORT
+  envVars:
+    - key: NODE_VERSION
+      value: 16.20.2
+    - key: NODE_OPTIONS
+      value: "--openssl-legacy-provider"
