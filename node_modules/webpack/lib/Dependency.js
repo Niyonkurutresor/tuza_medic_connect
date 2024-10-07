@@ -5,6 +5,7 @@
 
 "use strict";
 
+const RawModule = require("./RawModule");
 const memoize = require("./util/memoize");
 
 /** @typedef {import("webpack-sources").Source} Source */
@@ -17,39 +18,41 @@ const memoize = require("./util/memoize");
 /** @typedef {import("./ModuleGraphConnection").ConnectionState} ConnectionState */
 /** @typedef {import("./RuntimeTemplate")} RuntimeTemplate */
 /** @typedef {import("./WebpackError")} WebpackError */
+/** @typedef {import("./serialization/ObjectMiddleware").ObjectDeserializerContext} ObjectDeserializerContext */
+/** @typedef {import("./serialization/ObjectMiddleware").ObjectSerializerContext} ObjectSerializerContext */
 /** @typedef {import("./util/Hash")} Hash */
 /** @typedef {import("./util/runtime").RuntimeSpec} RuntimeSpec */
 
 /**
- * @typedef {Object} UpdateHashContext
+ * @typedef {object} UpdateHashContext
  * @property {ChunkGraph} chunkGraph
  * @property {RuntimeSpec} runtime
  * @property {RuntimeTemplate=} runtimeTemplate
  */
 
 /**
- * @typedef {Object} SourcePosition
+ * @typedef {object} SourcePosition
  * @property {number} line
  * @property {number=} column
  */
 
 /**
- * @typedef {Object} RealDependencyLocation
+ * @typedef {object} RealDependencyLocation
  * @property {SourcePosition} start
  * @property {SourcePosition=} end
  * @property {number=} index
  */
 
 /**
- * @typedef {Object} SyntheticDependencyLocation
+ * @typedef {object} SyntheticDependencyLocation
  * @property {string} name
  * @property {number=} index
  */
 
-/** @typedef {SyntheticDependencyLocation|RealDependencyLocation} DependencyLocation */
+/** @typedef {SyntheticDependencyLocation | RealDependencyLocation} DependencyLocation */
 
 /**
- * @typedef {Object} ExportSpec
+ * @typedef {object} ExportSpec
  * @property {string} name the name of the export
  * @property {boolean=} canMangle can the export be renamed (defaults to true)
  * @property {boolean=} terminalBinding is the export a terminal binding that should be checked for export star conflicts
@@ -61,10 +64,10 @@ const memoize = require("./util/memoize");
  */
 
 /**
- * @typedef {Object} ExportsSpec
+ * @typedef {object} ExportsSpec
  * @property {(string | ExportSpec)[] | true | null} exports exported names, true for unknown exports or null for no exports
  * @property {Set<string>=} excludeExports when exports = true, list of unaffected exports
- * @property {Set<string>=} hideExports list of maybe prior exposed, but now hidden exports
+ * @property {(Set<string> | null)=} hideExports list of maybe prior exposed, but now hidden exports
  * @property {ModuleGraphConnection=} from when reexported: from which module
  * @property {number=} priority when reexported: with which priority
  * @property {boolean=} canMangle can the export be renamed (defaults to true)
@@ -73,22 +76,27 @@ const memoize = require("./util/memoize");
  */
 
 /**
- * @typedef {Object} ReferencedExport
+ * @typedef {object} ReferencedExport
  * @property {string[]} name name of the referenced export
  * @property {boolean=} canMangle when false, referenced export can not be mangled, defaults to true
  */
 
-const getIgnoredModule = memoize(() => {
-	const RawModule = require("./RawModule");
-	return new RawModule("/* (ignored) */", `ignored`, `(ignored)`);
-});
+/** @typedef {function(ModuleGraphConnection, RuntimeSpec): ConnectionState} GetConditionFn */
+
+const TRANSITIVE = Symbol("transitive");
+
+const getIgnoredModule = memoize(
+	() => new RawModule("/* (ignored) */", "ignored", "(ignored)")
+);
 
 class Dependency {
 	constructor() {
-		/** @type {Module} */
+		/** @type {Module | undefined} */
 		this._parentModule = undefined;
-		/** @type {DependenciesBlock} */
+		/** @type {DependenciesBlock | undefined} */
 		this._parentDependenciesBlock = undefined;
+		/** @type {number} */
+		this._parentDependenciesBlockIndex = -1;
 		// TODO check if this can be moved into ModuleDependency
 		/** @type {boolean} */
 		this.weak = false;
@@ -155,17 +163,32 @@ class Dependency {
 			this._locEL = 0;
 			this._locEC = 0;
 		}
-		if ("index" in loc) {
-			this._locI = loc.index;
-		} else {
-			this._locI = undefined;
-		}
-		if ("name" in loc) {
-			this._locN = loc.name;
-		} else {
-			this._locN = undefined;
-		}
+		this._locI = "index" in loc ? loc.index : undefined;
+		this._locN = "name" in loc ? loc.name : undefined;
 		this._loc = loc;
+	}
+
+	/**
+	 * @param {number} startLine start line
+	 * @param {number} startColumn start column
+	 * @param {number} endLine end line
+	 * @param {number} endColumn end column
+	 */
+	setLoc(startLine, startColumn, endLine, endColumn) {
+		this._locSL = startLine;
+		this._locSC = startColumn;
+		this._locEL = endLine;
+		this._locEC = endColumn;
+		this._locI = undefined;
+		this._locN = undefined;
+		this._loc = undefined;
+	}
+
+	/**
+	 * @returns {string | undefined} a request context
+	 */
+	getContext() {
+		return undefined;
 	}
 
 	/**
@@ -173,6 +196,13 @@ class Dependency {
 	 */
 	getResourceIdentifier() {
 		return null;
+	}
+
+	/**
+	 * @returns {boolean | TRANSITIVE} true, when changes to the referenced module could affect the referencing module; TRANSITIVE, when changes to the referenced module could affect referencing modules of the referencing module
+	 */
+	couldAffectReferencingModule() {
+		return TRANSITIVE;
 	}
 
 	/**
@@ -199,7 +229,7 @@ class Dependency {
 
 	/**
 	 * @param {ModuleGraph} moduleGraph module graph
-	 * @returns {null | false | function(ModuleGraphConnection, RuntimeSpec): ConnectionState} function to determine if the connection is active
+	 * @returns {null | false | GetConditionFn} function to determine if the connection is active
 	 */
 	getCondition(moduleGraph) {
 		return null;
@@ -217,7 +247,7 @@ class Dependency {
 	/**
 	 * Returns warnings
 	 * @param {ModuleGraph} moduleGraph module graph
-	 * @returns {WebpackError[]} warnings
+	 * @returns {WebpackError[] | null | undefined} warnings
 	 */
 	getWarnings(moduleGraph) {
 		return null;
@@ -226,7 +256,7 @@ class Dependency {
 	/**
 	 * Returns errors
 	 * @param {ModuleGraph} moduleGraph module graph
-	 * @returns {WebpackError[]} errors
+	 * @returns {WebpackError[] | null | undefined} errors
 	 */
 	getErrors(moduleGraph) {
 		return null;
@@ -258,12 +288,15 @@ class Dependency {
 
 	/**
 	 * @param {string} context context directory
-	 * @returns {Module} a module
+	 * @returns {Module | null} a module
 	 */
 	createIgnoredModule(context) {
 		return getIgnoredModule();
 	}
 
+	/**
+	 * @param {ObjectSerializerContext} context context
+	 */
 	serialize({ write }) {
 		write(this.weak);
 		write(this.optional);
@@ -275,6 +308,9 @@ class Dependency {
 		write(this._locN);
 	}
 
+	/**
+	 * @param {ObjectDeserializerContext} context context
+	 */
 	deserialize({ read }) {
 		this.weak = read();
 		this.optional = read();
@@ -292,6 +328,8 @@ Dependency.NO_EXPORTS_REFERENCED = [];
 /** @type {string[][]} */
 Dependency.EXPORTS_OBJECT_REFERENCED = [[]];
 
+// eslint-disable-next-line no-warning-comments
+// @ts-ignore https://github.com/microsoft/TypeScript/issues/42919
 Object.defineProperty(Dependency.prototype, "module", {
 	/**
 	 * @deprecated
@@ -314,6 +352,8 @@ Object.defineProperty(Dependency.prototype, "module", {
 	}
 });
 
+// eslint-disable-next-line no-warning-comments
+// @ts-ignore https://github.com/microsoft/TypeScript/issues/42919
 Object.defineProperty(Dependency.prototype, "disconnect", {
 	get() {
 		throw new Error(
@@ -321,5 +361,7 @@ Object.defineProperty(Dependency.prototype, "disconnect", {
 		);
 	}
 });
+
+Dependency.TRANSITIVE = TRANSITIVE;
 
 module.exports = Dependency;

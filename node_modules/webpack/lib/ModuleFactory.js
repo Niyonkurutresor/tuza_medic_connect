@@ -10,22 +10,23 @@
 /** @typedef {import("./Module")} Module */
 
 /**
- * @typedef {Object} ModuleFactoryResult
+ * @typedef {object} ModuleFactoryResult
  * @property {Module=} module the created module or unset if no module was created
  * @property {Set<string>=} fileDependencies
  * @property {Set<string>=} contextDependencies
  * @property {Set<string>=} missingDependencies
+ * @property {boolean=} cacheable allow to use the unsafe cache
  */
 
 /**
- * @typedef {Object} ModuleFactoryCreateDataContextInfo
+ * @typedef {object} ModuleFactoryCreateDataContextInfo
  * @property {string} issuer
  * @property {string | null=} issuerLayer
  * @property {string} compiler
  */
 
 /**
- * @typedef {Object} ModuleFactoryCreateData
+ * @typedef {object} ModuleFactoryCreateData
  * @property {ModuleFactoryCreateDataContextInfo} contextInfo
  * @property {ResolveOptions=} resolveOptions
  * @property {string} context
@@ -37,7 +38,7 @@ class ModuleFactory {
 	/**
 	 * @abstract
 	 * @param {ModuleFactoryCreateData} data data object
-	 * @param {function(Error=, ModuleFactoryResult=): void} callback callback
+	 * @param {function((Error | null)=, ModuleFactoryResult=): void} callback callback
 	 * @returns {void}
 	 */
 	create(data, callback) {

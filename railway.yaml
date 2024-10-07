@@ -1,34 +1,14 @@
-services:
-  - type: web
-    name: my-laravel-app
-    env: php
-    plan: free
-    buildCommand: |
-      # Install composer dependencies
-      composer install --no-dev --optimize-autoloader
-      
-      # Install Node.js dependencies
-      npm ci
-      
-      # Set executable permissions for Webpack and Laravel Mix
-      chmod +x node_modules/.bin/webpack
-      chmod +x node_modules/.bin/mix
-
-      # Build production assets
-      export NODE_OPTIONS=--openssl-legacy-provider
-      npm run prod
-  startCommand: |
-    # Run database migrations and cache settings during startup
-    php artisan migrate --force
-    php artisan db:seed --force
-    php artisan config:cache
-    php artisan route:cache
-    php artisan view:cache
-    
-    # Start Laravel server
-    php artisan serve --host 0.0.0.0 --port $PORT
-  envVars:
-    - key: NODE_VERSION
-      value: 18.x
-    - key: NODE_OPTIONS
-      value: "--openssl-legacy-provider"
+# services:
+#   - type: web
+#     name: my-laravel-app
+#     env: php
+#     plan: free
+#     buildCommand: |
+#       composer install --optimize-autoloader --no-dev
+#       npm install
+#       chmod -R +x node_modules/.bin
+#       npx mix --production
+#     startCommand: |
+#       php artisan migrate --force
+#       php artisan db:seed --force
+#       php artisan serve --host 0.0.0.0 --port $PORT

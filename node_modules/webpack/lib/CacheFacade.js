@@ -5,6 +5,7 @@
 
 "use strict";
 
+const { forEachBail } = require("enhanced-resolve");
 const asyncLib = require("neo-async");
 const getLazyHashedEtag = require("./cache/getLazyHashedEtag");
 const mergeEtags = require("./cache/mergeEtags");
@@ -13,19 +14,20 @@ const mergeEtags = require("./cache/mergeEtags");
 /** @typedef {import("./Cache").Etag} Etag */
 /** @typedef {import("./WebpackError")} WebpackError */
 /** @typedef {import("./cache/getLazyHashedEtag").HashableObject} HashableObject */
+/** @typedef {typeof import("./util/Hash")} HashConstructor */
 
 /**
  * @template T
  * @callback CallbackCache
- * @param {WebpackError=} err
- * @param {T=} result
+ * @param {(Error | null)=} err
+ * @param {(T | null)=} result
  * @returns {void}
  */
 
 /**
  * @template T
  * @callback CallbackNormalErrorCache
- * @param {Error=} err
+ * @param {(Error | null)=} err
  * @param {T=} result
  * @returns {void}
  */
@@ -36,6 +38,7 @@ class MultiItemCache {
 	 */
 	constructor(items) {
 		this._items = items;
+		// eslint-disable-next-line no-constructor-return
 		if (items.length === 1) return /** @type {any} */ (items[0]);
 	}
 
@@ -45,15 +48,7 @@ class MultiItemCache {
 	 * @returns {void}
 	 */
 	get(callback) {
-		const next = i => {
-			this._items[i].get((err, result) => {
-				if (err) return callback(err);
-				if (result !== undefined) return callback(null, result);
-				if (++i >= this._items.length) return callback();
-				next(i);
-			});
-		};
-		next(0);
+		forEachBail(this._items, (item, callback) => item.get(callback), callback);
 	}
 
 	/**
@@ -61,12 +56,15 @@ class MultiItemCache {
 	 * @returns {Promise<T>} promise with the data
 	 */
 	getPromise() {
-		const next = i => {
-			return this._items[i].getPromise().then(result => {
+		/**
+		 * @param {number} i index
+		 * @returns {Promise<T>} promise with the data
+		 */
+		const next = i =>
+			this._items[i].getPromise().then(result => {
 				if (result !== undefined) return result;
 				if (++i < this._items.length) return next(i);
 			});
-		};
 		return next(0);
 	}
 
@@ -198,10 +196,12 @@ class CacheFacade {
 	/**
 	 * @param {Cache} cache the root cache
 	 * @param {string} name the child cache name
+	 * @param {(string | HashConstructor)=} hashFunction the hash function to use
 	 */
-	constructor(cache, name) {
+	constructor(cache, name, hashFunction) {
 		this._cache = cache;
 		this._name = name;
+		this._hashFunction = hashFunction;
 	}
 
 	/**
@@ -209,7 +209,11 @@ class CacheFacade {
 	 * @returns {CacheFacade} child cache
 	 */
 	getChildCache(name) {
-		return new CacheFacade(this._cache, `${this._name}|${name}`);
+		return new CacheFacade(
+			this._cache,
+			`${this._name}|${name}`,
+			this._hashFunction
+		);
 	}
 
 	/**
@@ -230,7 +234,7 @@ class CacheFacade {
 	 * @returns {Etag} an etag that is lazy hashed
 	 */
 	getLazyHashedEtag(obj) {
-		return getLazyHashedEtag(obj);
+		return getLazyHashedEtag(obj, this._hashFunction);
 	}
 
 	/**

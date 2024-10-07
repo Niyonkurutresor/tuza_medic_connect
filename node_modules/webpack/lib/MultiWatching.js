@@ -13,7 +13,7 @@ const asyncLib = require("neo-async");
 /**
  * @template T
  * @callback Callback
- * @param {Error=} err
+ * @param {(Error | null)=} err
  * @param {T=} result
  */
 
@@ -27,6 +27,10 @@ class MultiWatching {
 		this.compiler = compiler;
 	}
 
+	/**
+	 * @param {Callback<void>=} callback signals when the build has completed again
+	 * @returns {void}
+	 */
 	invalidate(callback) {
 		if (callback) {
 			asyncLib.each(
@@ -58,7 +62,7 @@ class MultiWatching {
 	 * @returns {void}
 	 */
 	close(callback) {
-		asyncLib.forEach(
+		asyncLib.each(
 			this.watchings,
 			(watching, finishedCallback) => {
 				watching.close(finishedCallback);

@@ -18,6 +18,8 @@ const { dirname, join, mkdirp } = require("../util/fs");
 const memoize = require("../util/memoize");
 const SerializerMiddleware = require("./SerializerMiddleware");
 
+/** @typedef {typeof import("../util/Hash")} Hash */
+/** @typedef {import("../util/fs").IStats} IStats */
 /** @typedef {import("../util/fs").IntermediateFileSystem} IntermediateFileSystem */
 /** @typedef {import("./types").BufferSerializableType} BufferSerializableType */
 
@@ -39,8 +41,16 @@ Section -> Buffer
 
 // "wpc" + 1 in little-endian
 const VERSION = 0x01637077;
-const hashForName = buffers => {
-	const hash = createHash("md4");
+const WRITE_LIMIT_TOTAL = 0x7fff0000;
+const WRITE_LIMIT_CHUNK = 511 * 1024 * 1024;
+
+/**
+ * @param {Buffer[]} buffers buffers
+ * @param {string | Hash} hashFunction hash function to use
+ * @returns {string} hash
+ */
+const hashForName = (buffers, hashFunction) => {
+	const hash = createHash(hashFunction);
 	for (const buf of buffers) hash.update(buf);
 	return /** @type {string} */ (hash.digest("hex"));
 };
@@ -48,48 +58,55 @@ const hashForName = buffers => {
 const COMPRESSION_CHUNK_SIZE = 100 * 1024 * 1024;
 const DECOMPRESSION_CHUNK_SIZE = 100 * 1024 * 1024;
 
+/** @type {function(Buffer, number, number): void} */
 const writeUInt64LE = Buffer.prototype.writeBigUInt64LE
 	? (buf, value, offset) => {
 			buf.writeBigUInt64LE(BigInt(value), offset);
-	  }
+		}
 	: (buf, value, offset) => {
 			const low = value % 0x100000000;
 			const high = (value - low) / 0x100000000;
 			buf.writeUInt32LE(low, offset);
 			buf.writeUInt32LE(high, offset + 4);
-	  };
+		};
 
+/** @type {function(Buffer, number): void} */
 const readUInt64LE = Buffer.prototype.readBigUInt64LE
-	? (buf, offset) => {
-			return Number(buf.readBigUInt64LE(offset));
-	  }
+	? (buf, offset) => Number(buf.readBigUInt64LE(offset))
 	: (buf, offset) => {
 			const low = buf.readUInt32LE(offset);
 			const high = buf.readUInt32LE(offset + 4);
 			return high * 0x100000000 + low;
-	  };
+		};
 
 /**
- * @typedef {Object} SerializeResult
+ * @typedef {object} SerializeResult
  * @property {string | false} name
  * @property {number} size
- * @property {Promise=} backgroundJob
+ * @property {Promise<any>=} backgroundJob
  */
 
 /**
  * @param {FileMiddleware} middleware this
  * @param {BufferSerializableType[] | Promise<BufferSerializableType[]>} data data to be serialized
  * @param {string | boolean} name file base name
- * @param {function(string | false, Buffer[]): Promise<void>} writeFile writes a file
+ * @param {function(string | false, Buffer[], number): Promise<void>} writeFile writes a file
+ * @param {string | Hash} hashFunction hash function to use
  * @returns {Promise<SerializeResult>} resulting file pointer and promise
  */
-const serialize = async (middleware, data, name, writeFile) => {
+const serialize = async (
+	middleware,
+	data,
+	name,
+	writeFile,
+	hashFunction = "md4"
+) => {
 	/** @type {(Buffer[] | Buffer | SerializeResult | Promise<SerializeResult>)[]} */
 	const processedData = [];
 	/** @type {WeakMap<SerializeResult, function(): any | Promise<any>>} */
 	const resultToLazy = new WeakMap();
-	/** @type {Buffer[]} */
-	let lastBuffers = undefined;
+	/** @type {Buffer[] | undefined} */
+	let lastBuffers;
 	for (const item of await data) {
 		if (typeof item === "function") {
 			if (!SerializerMiddleware.isLazy(item))
@@ -118,7 +135,8 @@ const serialize = async (middleware, data, name, writeFile) => {
 							middleware,
 							content,
 							(options && options.name) || true,
-							writeFile
+							writeFile,
+							hashFunction
 						).then(result => {
 							/** @type {any} */ (item).options.size = result.size;
 							resultToLazy.set(result, item);
@@ -146,9 +164,8 @@ const serialize = async (middleware, data, name, writeFile) => {
 	const backgroundJobs = [];
 	const resolvedData = (
 		await Promise.all(
-			/** @type {Promise<Buffer[] | Buffer | SerializeResult>[]} */ (
-				processedData
-			)
+			/** @type {Promise<Buffer[] | Buffer | SerializeResult>[]} */
+			(processedData)
 		)
 	).map(item => {
 		if (Array.isArray(item) || Buffer.isBuffer(item)) return item;
@@ -164,6 +181,7 @@ const serialize = async (middleware, data, name, writeFile) => {
 		SerializerMiddleware.setLazySerializedValue(lazy, buf);
 		return buf;
 	});
+	/** @type {number[]} */
 	const lengths = [];
 	for (const item of resolvedData) {
 		if (Array.isArray(item)) {
@@ -177,7 +195,7 @@ const serialize = async (middleware, data, name, writeFile) => {
 		} else if (item) {
 			lengths.push(-item.length);
 		} else {
-			throw new Error("Unexpected falsy value in resolved data " + item);
+			throw new Error(`Unexpected falsy value in resolved data ${item}`);
 		}
 	}
 	const header = Buffer.allocUnsafe(8 + lengths.length * 4);
@@ -186,6 +204,7 @@ const serialize = async (middleware, data, name, writeFile) => {
 	for (let i = 0; i < lengths.length; i++) {
 		header.writeInt32LE(lengths[i], 8 + i * 4);
 	}
+	/** @type {Buffer[]} */
 	const buf = [header];
 	for (const item of resolvedData) {
 		if (Array.isArray(item)) {
@@ -195,11 +214,11 @@ const serialize = async (middleware, data, name, writeFile) => {
 		}
 	}
 	if (name === true) {
-		name = hashForName(buf);
+		name = hashForName(buf, hashFunction);
 	}
-	backgroundJobs.push(writeFile(name, buf));
 	let size = 0;
 	for (const b of buf) size += b.length;
+	backgroundJobs.push(writeFile(name, buf, size));
 	return {
 		size,
 		name,
@@ -218,18 +237,21 @@ const serialize = async (middleware, data, name, writeFile) => {
  */
 const deserialize = async (middleware, name, readFile) => {
 	const contents = await readFile(name);
-	if (contents.length === 0) throw new Error("Empty file " + name);
+	if (contents.length === 0) throw new Error(`Empty file ${name}`);
 	let contentsIndex = 0;
 	let contentItem = contents[0];
 	let contentItemLength = contentItem.length;
 	let contentPosition = 0;
-	if (contentItemLength === 0) throw new Error("Empty file " + name);
+	if (contentItemLength === 0) throw new Error(`Empty file ${name}`);
 	const nextContent = () => {
 		contentsIndex++;
 		contentItem = contents[contentsIndex];
 		contentItemLength = contentItem.length;
 		contentPosition = 0;
 	};
+	/**
+	 * @param {number} n number of bytes to ensure
+	 */
 	const ensureData = n => {
 		if (contentPosition === contentItemLength) {
 			nextContent();
@@ -257,18 +279,28 @@ const deserialize = async (middleware, name, readFile) => {
 			contentPosition = 0;
 		}
 	};
+	/**
+	 * @returns {number} value value
+	 */
 	const readUInt32LE = () => {
 		ensureData(4);
 		const value = contentItem.readUInt32LE(contentPosition);
 		contentPosition += 4;
 		return value;
 	};
+	/**
+	 * @returns {number} value value
+	 */
 	const readInt32LE = () => {
 		ensureData(4);
 		const value = contentItem.readInt32LE(contentPosition);
 		contentPosition += 4;
 		return value;
 	};
+	/**
+	 * @param {number} l length
+	 * @returns {Buffer} buffer
+	 */
 	const readSlice = l => {
 		ensureData(l);
 		if (contentPosition === 0 && contentItemLength === l) {
@@ -346,18 +378,16 @@ const deserialize = async (middleware, name, readFile) => {
 					length -= l;
 					contentPosition = contentItemLength;
 				}
+			} else if (length >= contentItemLength) {
+				result.push(contentItem);
+				length -= contentItemLength;
+				contentPosition = contentItemLength;
 			} else {
-				if (length >= contentItemLength) {
-					result.push(contentItem);
-					length -= contentItemLength;
-					contentPosition = contentItemLength;
-				} else {
-					result.push(
-						Buffer.from(contentItem.buffer, contentItem.byteOffset, length)
-					);
-					contentPosition += length;
-					length = 0;
-				}
+				result.push(
+					Buffer.from(contentItem.buffer, contentItem.byteOffset, length)
+				);
+				contentPosition += length;
+				length = 0;
 			}
 			while (length > 0) {
 				nextContent();
@@ -378,6 +408,8 @@ const deserialize = async (middleware, name, readFile) => {
 	return result;
 };
 
+/** @typedef {{ filename: string, extension?: string }} FileMiddlewareContext */
+
 /**
  * @typedef {BufferSerializableType[]} DeserializedType
  * @typedef {true} SerializedType
@@ -386,14 +418,17 @@ const deserialize = async (middleware, name, readFile) => {
 class FileMiddleware extends SerializerMiddleware {
 	/**
 	 * @param {IntermediateFileSystem} fs filesystem
+	 * @param {string | Hash} hashFunction hash function to use
 	 */
-	constructor(fs) {
+	constructor(fs, hashFunction = "md4") {
 		super();
 		this.fs = fs;
+		this._hashFunction = hashFunction;
 	}
+
 	/**
 	 * @param {DeserializedType} data data
-	 * @param {Object} context context object
+	 * @param {object} context context object
 	 * @returns {SerializedType|Promise<SerializedType>} serialized data
 	 */
 	serialize(data, context) {
@@ -405,56 +440,110 @@ class FileMiddleware extends SerializerMiddleware {
 				// It's important that we don't touch existing files during serialization
 				// because serialize may read existing files (when deserializing)
 				const allWrittenFiles = new Set();
-				const writeFile = async (name, content) => {
+				/**
+				 * @param {string | false} name name
+				 * @param {Buffer[]} content content
+				 * @param {number} size size
+				 * @returns {Promise<void>}
+				 */
+				const writeFile = async (name, content, size) => {
 					const file = name
 						? join(this.fs, filename, `../${name}${extension}`)
 						: filename;
-					await new Promise((resolve, reject) => {
-						let stream = this.fs.createWriteStream(file + "_");
-						let compression;
-						if (file.endsWith(".gz")) {
-							compression = createGzip({
-								chunkSize: COMPRESSION_CHUNK_SIZE,
-								level: zConstants.Z_BEST_SPEED
-							});
-						} else if (file.endsWith(".br")) {
-							compression = createBrotliCompress({
-								chunkSize: COMPRESSION_CHUNK_SIZE,
-								params: {
-									[zConstants.BROTLI_PARAM_MODE]: zConstants.BROTLI_MODE_TEXT,
-									[zConstants.BROTLI_PARAM_QUALITY]: 2,
-									[zConstants.BROTLI_PARAM_DISABLE_LITERAL_CONTEXT_MODELING]: true,
-									[zConstants.BROTLI_PARAM_SIZE_HINT]: content.reduce(
-										(size, b) => size + b.length,
-										0
-									)
+					await new Promise(
+						/**
+						 * @param {(value?: undefined) => void} resolve resolve
+						 * @param {(reason?: Error | null) => void} reject reject
+						 */
+						(resolve, reject) => {
+							let stream = this.fs.createWriteStream(`${file}_`);
+							let compression;
+							if (file.endsWith(".gz")) {
+								compression = createGzip({
+									chunkSize: COMPRESSION_CHUNK_SIZE,
+									level: zConstants.Z_BEST_SPEED
+								});
+							} else if (file.endsWith(".br")) {
+								compression = createBrotliCompress({
+									chunkSize: COMPRESSION_CHUNK_SIZE,
+									params: {
+										[zConstants.BROTLI_PARAM_MODE]: zConstants.BROTLI_MODE_TEXT,
+										[zConstants.BROTLI_PARAM_QUALITY]: 2,
+										[zConstants.BROTLI_PARAM_DISABLE_LITERAL_CONTEXT_MODELING]: true,
+										[zConstants.BROTLI_PARAM_SIZE_HINT]: size
+									}
+								});
+							}
+							if (compression) {
+								pipeline(compression, stream, reject);
+								stream = compression;
+								stream.on("finish", () => resolve());
+							} else {
+								stream.on("error", err => reject(err));
+								stream.on("finish", () => resolve());
+							}
+							// split into chunks for WRITE_LIMIT_CHUNK size
+							/** @type {TODO[]} */
+							const chunks = [];
+							for (const b of content) {
+								if (b.length < WRITE_LIMIT_CHUNK) {
+									chunks.push(b);
+								} else {
+									for (let i = 0; i < b.length; i += WRITE_LIMIT_CHUNK) {
+										chunks.push(b.slice(i, i + WRITE_LIMIT_CHUNK));
+									}
 								}
-							});
+							}
+
+							const len = chunks.length;
+							let i = 0;
+							/**
+							 * @param {(Error | null)=} err err
+							 */
+							const batchWrite = err => {
+								// will be handled in "on" error handler
+								if (err) return;
+
+								if (i === len) {
+									stream.end();
+									return;
+								}
+
+								// queue up a batch of chunks up to the write limit
+								// end is exclusive
+								let end = i;
+								let sum = chunks[end++].length;
+								while (end < len) {
+									sum += chunks[end].length;
+									if (sum > WRITE_LIMIT_TOTAL) break;
+									end++;
+								}
+								while (i < end - 1) {
+									stream.write(chunks[i++]);
+								}
+								stream.write(chunks[i++], batchWrite);
+							};
+							batchWrite();
 						}
-						if (compression) {
-							pipeline(compression, stream, reject);
-							stream = compression;
-							stream.on("finish", () => resolve());
-						} else {
-							stream.on("error", err => reject(err));
-							stream.on("finish", () => resolve());
-						}
-						for (const b of content) stream.write(b);
-						stream.end();
-					});
+					);
 					if (name) allWrittenFiles.add(file);
 				};
 
 				resolve(
-					serialize(this, data, false, writeFile).then(
+					serialize(this, data, false, writeFile, this._hashFunction).then(
 						async ({ backgroundJob }) => {
 							await backgroundJob;
 
 							// Rename the index file to disallow access during inconsistent file state
-							await new Promise(resolve =>
-								this.fs.rename(filename, filename + ".old", err => {
-									resolve();
-								})
+							await new Promise(
+								/**
+								 * @param {(value?: undefined) => void} resolve resolve
+								 */
+								resolve => {
+									this.fs.rename(filename, `${filename}.old`, err => {
+										resolve();
+									});
+								}
 							);
 
 							// update all written files
@@ -462,22 +551,35 @@ class FileMiddleware extends SerializerMiddleware {
 								Array.from(
 									allWrittenFiles,
 									file =>
-										new Promise((resolve, reject) => {
-											this.fs.rename(file + "_", file, err => {
-												if (err) return reject(err);
-												resolve();
-											});
-										})
+										new Promise(
+											/**
+											 * @param {(value?: undefined) => void} resolve resolve
+											 * @param {(reason?: Error | null) => void} reject reject
+											 * @returns {void}
+											 */
+											(resolve, reject) => {
+												this.fs.rename(`${file}_`, file, err => {
+													if (err) return reject(err);
+													resolve();
+												});
+											}
+										)
 								)
 							);
 
 							// As final step automatically update the index file to have a consistent pack again
-							await new Promise(resolve => {
-								this.fs.rename(filename + "_", filename, err => {
-									if (err) return reject(err);
-									resolve();
-								});
-							});
+							await new Promise(
+								/**
+								 * @param {(value?: undefined) => void} resolve resolve
+								 * @returns {void}
+								 */
+								resolve => {
+									this.fs.rename(`${filename}_`, filename, err => {
+										if (err) return reject(err);
+										resolve();
+									});
+								}
+							);
 							return /** @type {true} */ (true);
 						}
 					)
@@ -488,11 +590,15 @@ class FileMiddleware extends SerializerMiddleware {
 
 	/**
 	 * @param {SerializedType} data data
-	 * @param {Object} context context object
+	 * @param {object} context context object
 	 * @returns {DeserializedType|Promise<DeserializedType>} deserialized data
 	 */
 	deserialize(data, context) {
 		const { filename, extension = "" } = context;
+		/**
+		 * @param {string | boolean} name name
+		 * @returns {Promise<TODO>} result
+		 */
 		const readFile = name =>
 			new Promise((resolve, reject) => {
 				const file = name
@@ -503,10 +609,14 @@ class FileMiddleware extends SerializerMiddleware {
 						reject(err);
 						return;
 					}
-					let remaining = /** @type {number} */ (stats.size);
+					let remaining = /** @type {IStats} */ (stats).size;
+					/** @type {Buffer | undefined} */
 					let currentBuffer;
+					/** @type {number | undefined} */
 					let currentBufferUsed;
+					/** @type {any[]} */
 					const buf = [];
+					/** @type {import("zlib").Zlib & import("stream").Transform | undefined} */
 					let decompression;
 					if (file.endsWith(".gz")) {
 						decompression = createGunzip({
@@ -518,7 +628,8 @@ class FileMiddleware extends SerializerMiddleware {
 						});
 					}
 					if (decompression) {
-						let newResolve, newReject;
+						let newResolve;
+						let newReject;
 						resolve(
 							Promise.all([
 								new Promise((rs, rj) => {
@@ -535,11 +646,12 @@ class FileMiddleware extends SerializerMiddleware {
 						resolve = newResolve;
 						reject = newReject;
 					}
-					this.fs.open(file, "r", (err, fd) => {
+					this.fs.open(file, "r", (err, _fd) => {
 						if (err) {
 							reject(err);
 							return;
 						}
+						const fd = /** @type {number} */ (_fd);
 						const read = () => {
 							if (currentBuffer === undefined) {
 								currentBuffer = Buffer.allocUnsafeSlow(
@@ -552,8 +664,10 @@ class FileMiddleware extends SerializerMiddleware {
 								currentBufferUsed = 0;
 							}
 							let readBuffer = currentBuffer;
-							let readOffset = currentBufferUsed;
-							let readLength = currentBuffer.length - currentBufferUsed;
+							let readOffset = /** @type {number} */ (currentBufferUsed);
+							let readLength =
+								currentBuffer.length -
+								/** @type {number} */ (currentBufferUsed);
 							// values passed to fs.read must be valid int32 values
 							if (readOffset > 0x7fffffff) {
 								readBuffer = currentBuffer.slice(readOffset);
@@ -575,9 +689,13 @@ class FileMiddleware extends SerializerMiddleware {
 										});
 										return;
 									}
-									currentBufferUsed += bytesRead;
+									/** @type {number} */
+									(currentBufferUsed) += bytesRead;
 									remaining -= bytesRead;
-									if (currentBufferUsed === currentBuffer.length) {
+									if (
+										currentBufferUsed ===
+										/** @type {Buffer} */ (currentBuffer).length
+									) {
 										if (decompression) {
 											decompression.write(currentBuffer);
 										} else {
