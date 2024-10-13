@@ -14,14 +14,14 @@ class DefaultCurrenciesSeeder extends Seeder
     {
         $input = [
             [
+                'currency_name' => 'Rwanda',
+                'currency_icon' => 'frw',
+                'currency_code' => 'RWF',
+            ],
+            [
                 'currency_name' => 'United states dollar',
                 'currency_icon' => '$',
                 'currency_code' => 'USD',
-            ],
-            [
-                'currency_name' => 'Indian rupee',
-                'currency_icon' => '₹',
-                'currency_code' => 'INR',
             ],
         ];
 

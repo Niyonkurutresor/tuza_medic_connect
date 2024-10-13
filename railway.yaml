@@ -1,14 +1,43 @@
+# railway.yaml
 services:
-  - type: web
-    name: my-laravel-app
-    env: php
-    plan: free
-    buildCommand: |
-      composer install --optimize-autoloader --no-dev
-      npm install
-      chmod -R +x node_modules/.bin
-      npx mix --production
-    startCommand: |
-      php artisan migrate --force
-      php artisan db:seed --force
-      php artisan serve --host 0.0.0.0 --port $PORT
+  app:
+    build:
+      builder: "Nixpacks"
+    start:
+      cmd: |
+        if [ "$APP_ENV" = "local" ]; then
+          php artisan serve --host=0.0.0.0 --port=80
+        else
+          cp /app/.railway/nginx.conf /etc/nginx/nginx.conf &&
+          php-fpm -D &&
+          nginx -g 'daemon off;'
+        fi
+
+    files:
+      - path: .railway/nginx.conf
+        content: |
+          worker_processes auto;
+          events { worker_connections 1024; }
+          http {
+            server {
+              listen 80;
+              root /app/public;
+              index index.php index.html;
+              server_name localhost;
+
+              location / {
+                  try_files $uri $uri/ /index.php?$query_string;
+              }
+
+              location ~ \.php$ {
+                  include fastcgi_params;
+                  fastcgi_pass 127.0.0.1:9000;
+                  fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+                  fastcgi_index index.php;
+              }
+
+              location ~ /\.ht {
+                  deny all;
+              }
+            }
+          }

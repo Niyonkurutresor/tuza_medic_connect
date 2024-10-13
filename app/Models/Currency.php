@@ -114,6 +114,7 @@ class Currency extends Model
         'GBP' => 'Pound Sterling',
         'OMR' => 'Rial Omani',
         'RON' => 'Romania, New Leu',
+        'RWF' => 'Rwandan flancs',
         'ROL' => 'Romania, Old Leu',
         'RUB' => 'Russian Ruble',
         'SAR' => 'Saudi Riyal',
