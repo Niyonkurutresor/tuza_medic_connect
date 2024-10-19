@@ -612,7 +612,7 @@ if (! function_exists('getCurrencyFormat')) {
 
 function getCurrencyFormat($currencies, $amount): string
 {
-    return moneyFormat($amount, $currencies);
+    return $amount . ' ' . $currencies;
 }
 }
 
